@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Analytics Tool</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-image: url('images.jpg'); /* Replace with the correct path to your image */
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;
+        }
+        header, footer { 
+            background: rgba(0, 115, 230, 0.8); 
+            color: white; 
+            text-align: center; 
+            padding: 10px; 
+        }
+        nav ul { 
+            list-style: none; 
+            padding: 0; 
+        }
+        nav ul li { 
+            display: inline; 
+            margin: 0 15px; 
+        }
+        section { 
+            padding: 20px; 
+            margin: 10px; 
+            border: 1px solid #ccc; 
+            background-color: rgba(255, 255, 255, 0.9); 
+        }
+        .dark-mode { 
+            background: #333; 
+            color: white; 
+        }
+        .comment-section, .edit-profile { 
+            margin-top: 10px; 
+        }
+        .comment-list { 
+            list-style-type: none; 
+            padding-left: 0; 
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Social Media Analytics Tool</h1>
+        <nav>
+            <ul>
+                <li><a href="#submit-message" style="color: white;">Submit a Message</a></li>
+                <li><a href="#view-posts" style="color: white;">View Posts</a></li>
+                <li><a href="#analytics" style="color: white;">Analytics</a></li>
+                <li><a href="#user-profile" style="color: white;">User Profile</a></li>
+                <li><a href="#about" style="color: white;">About</a></li>
+            </ul>
+        </nav>
+        <button id="toggle-dark-mode">Dark Mode</button>
+    </header>
+
+    <section id="submit-message">
+        <h2>Submit a Message</h2>
+        <form id="postForm">
+            <input type="text" name="message" placeholder="Enter your message" required>
+            <label for="category">Post Category:</label>
+            <select name="category" id="category">
+                <option value="update">Update</option>
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+            </select>
+            <label for="image">Choose Image:</label>
+            <input type="file" name="image" id="image" accept="image/*">
+            <button type="submit">Submit</button>
+        </form>
+    </section>
+
+    <section id="view-posts">
+        <h2>View Posts</h2>
+        <label for="sortPosts">Sort by:</label>
+        <select id="sortPosts">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="mostLikes">Most Likes</option>
+        </select>
+        <div id="postList">
+            <h3>Recent Posts</h3>
+            <ul id="postItems"></ul>
+        </div>
+    </section>
+
+    <section id="analytics">
+        <h2>Analytics</h2>
+        <ul>
+            <li>Total Posts: <span id="totalPosts">0</span></li>
+            <li>Total Likes: <span id="totalLikes">0</span></li>
+            <li>Total Comments: <span id="totalComments">0</span></li>
+            <li>Engagement Rate: <span id="engagementRate">0%</span></li>
+        </ul>
+    </section>
+
+    <section id="user-profile">
+        <h2>User Profile</h2>
+        <p>Username: <span id="username">User1</span></p>
+        <button id="editProfileButton">Edit Profile</button>
+        <div id="editProfile" class="edit-profile">
+            <input type="text" placeholder="New Username" id="newUsername">
+            <button id="saveProfileButton">Save</button>
+            <button id="cancelProfileButton">Cancel</button>
+        </div>
+    </section>
+
+    <section id="about">
+        <h2>About This Tool</h2>
+        <p>This Social Media Analytics Tool allows users to submit messages, view posts, and analyze their engagement.</p>
+    </section>
+
+    <footer>
+        <p>© 2024 Social Media Analytics Tool</p>
+    </footer>
+
+    <script>
+        let totalLikes = 0;
+        let totalComments = 0;
+
+        document.getElementById('postForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const messageInput = this.querySelector('input[name="message"]');
+            const imageInput = this.querySelector('input[name="image"]');
+
+            const newPost = document.createElement('li');
+            newPost.setAttribute('data-likes', '0');
+            newPost.setAttribute('data-timestamp', Date.now());
+
+            const postContent = `
+                <strong>User1:</strong> ${messageInput.value} <br>
+                ${imageInput.files[0] ? `<img src="${URL.createObjectURL(imageInput.files[0])}" alt="Post Image" style="max-width: 200px;"/>` : ''}
+                <button class="like-button">❤️ Like</button>
+                <span class="likes-count">0 Likes</span>
+                <div class="comment-section">
+                    <input type="text" placeholder="Add a comment..." class="comment-input">
+                    <button class="comment-button">Comment</button>
+                    <ul class="comment-list"></ul>
+                </div>
+                <button class="delete-post-button">Delete Post</button>
+            `;
+            newPost.innerHTML = postContent;
+            document.getElementById('postItems').prepend(newPost);
+
+            messageInput.value = '';
+            imageInput.value = '';
+
+            updatePostCount();
+            attachEventListeners(newPost);
+
+            const sortBy = document.getElementById('sortPosts').value;
+            sortPosts(sortBy);
+        });
+
+        function attachEventListeners(postElement) {
+            postElement.querySelector('.like-button').addEventListener('click', function() {
+                let likes = parseInt(postElement.getAttribute('data-likes')) + 1;
+                postElement.setAttribute('data-likes', likes);
+                this.nextElementSibling.innerText = `${likes} Likes`;
+
+                totalLikes++;
+                updateEngagementRate();
+            });
+
+            postElement.querySelector('.comment-button').addEventListener('click', function() {
+                const commentText = this.previousElementSibling.value;
+                if (commentText) {
+                    const commentList = this.nextElementSibling;
+                    const newComment = document.createElement('li');
+                    newComment.innerText = commentText;
+                    commentList.appendChild(newComment);
+                    this.previousElementSibling.value = '';
+
+                    totalComments++;
+                    updateEngagementRate();
+                }
+            });
+
+            postElement.querySelector('.delete-post-button').addEventListener('click', function() {
+                postElement.remove();
+                updatePostCount();
+            });
+        }
+
+        document.getElementById('sortPosts').addEventListener('change', function () {
+            const sortBy = this.value;
+            sortPosts(sortBy);
+        });
+
+        function sortPosts(criteria) {
+            const postList = document.getElementById('postItems');
+            const posts = Array.from(postList.children);
+
+            posts.sort((a, b) => {
+                if (criteria === "newest") return b.getAttribute('data-timestamp') - a.getAttribute('data-timestamp');
+                if (criteria === "oldest") return a.getAttribute('data-timestamp') - b.getAttribute('data-timestamp');
+                if (criteria === "mostLikes") return b.getAttribute('data-likes') - a.getAttribute('data-likes');
+            });
+
+            postList.innerHTML = '';
+            posts.forEach(post => postList.appendChild(post));
+        }
+
+        function updatePostCount() {
+            const totalPosts = document.getElementById('postItems').children.length;
+            document.getElementById('totalPosts').innerText = totalPosts;
+        }
+
+        function updateEngagementRate() {
+            const totalPosts = document.getElementById('postItems').children.length;
+            const engagementRate = totalPosts ? ((totalLikes + totalComments) / totalPosts).toFixed(2) : 0;
+            document.getElementById('engagementRate').innerText = `${(engagementRate * 100).toFixed(2)}%`;
+            document.getElementById('totalLikes').innerText = totalLikes;
+            document.getElementById('totalComments').innerText = totalComments;
+        }
+
+        document.getElementById('toggle-dark-mode').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        document.getElementById('editProfileButton').addEventListener('click', function() {
+            document.getElementById('editProfile').style.display = 'block';
+        });
+
+        document.getElementById('saveProfileButton').addEventListener('click', function() {
+            const newUsername = document.getElementById('newUsername').value;
+            document.getElementById('username').innerText = newUsername;
+            document.getElementById('editProfile').style.display = 'none';
+        });
+
+        document.getElementById('cancelProfileButton').addEventListener('click', function() {
+            document.getElementById('editProfile').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
