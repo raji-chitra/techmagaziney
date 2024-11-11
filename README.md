@@ -1,1 +1,1 @@
-# techmagaziney
+# socialmedia analystics tool
